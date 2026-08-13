@@ -22,16 +22,48 @@ If you've ever had a commit rejected for "missing space after the colon," this t
 
 <div align="center">
 
+**The whole flow**
+
+![Commitly in action](screenshots/overall.gif)
+
+<br>
+
+<img src="screenshots/status.png" alt="commitly status" width="49%"/>
+<img src="screenshots/server.png" alt="commitly serve" width="49%"/>
+
+</div>
+
 ## Install
 
 `git cm` works immediately after any of these — no `init`, no alias, no config required.
 
-| Channel                               | Command                                                                                                                                            |
-| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Homebrew** (macOS)            | `brew tap fakihariefnoto/tapbrew install fakihariefnoto/tap/commitly`                                                                            |
-| **Scoop** (Windows)             | `scoop bucket add fakihariefnoto https://github.com/fakihariefnoto/scoop-bucketscoop install commitly`                                           |
-| **`.deb` / `.rpm`** (Linux) | `sudo dpkg -i commitly_*.deb` &nbsp;·&nbsp; `sudo rpm -i commitly_*.rpm`                                                                      |
-| **`go install`**              | `go install github.com/fakihariefnoto/commitly/cmd/commitly@latestcommitly init` # adds the `git cm` alias (go install can't ship the symlink) |
+**Homebrew** (macOS)
+
+```sh
+brew tap fakihariefnoto/tap
+brew install fakihariefnoto/tap/commitly
+```
+
+**Scoop** (Windows)
+
+```sh
+scoop bucket add fakihariefnoto https://github.com/fakihariefnoto/scoop-bucket
+scoop install commitly
+```
+
+**`.deb` / `.rpm`** (Linux)
+
+```sh
+# attach the .deb/.rpm from the release, then:
+sudo dpkg -i commitly_*.deb     # or: sudo rpm -i commitly_*.rpm
+```
+
+**`go install`**
+
+```sh
+go install github.com/fakihariefnoto/commitly/cmd/commitly@latest
+commitly init     # offers the `git cm` alias, since go install can't ship the symlink
+```
 
 ## Quick start
 
@@ -46,16 +78,16 @@ commitly serve            # the same history as a local web page
 
 ## Commands
 
-| Command                                           | Purpose                                                                        |
-| ------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `commitly commit` (`git cm`)                  | Compose and create a conventional commit                                       |
-| `commitly status` (`st`)                      | Your recent commits across every repo                                          |
-| `commitly serve`                                | Browse the same history in a browser (read-only, localhost)                    |
-| `commitly lint`                                 | Validate a message, a commit, or a range (exit`3` on failure — CI-friendly) |
-| `commitly changelog` (`cl`)                   | Markdown release notes from conventional history                               |
-| `commitly init`                                 | Optional: git alias,`commit-msg` hook, completions, `.commitly.yaml`       |
-| `commitly config`                               | Inspect and edit configuration (`get` / `set` / `list` / `path`)       |
-| `commitly completion` · `man` · `version` | Generated artifacts and version info                                           |
+| Command | Purpose |
+|---|---|
+| `commitly commit` (`git cm`) | Compose and create a conventional commit |
+| `commitly status` (`st`) | Your recent commits across every repo |
+| `commitly serve` | Browse the same history in a browser (read-only, localhost) |
+| `commitly lint` | Validate a message, a commit, or a range (exit `3` on failure — CI-friendly) |
+| `commitly changelog` (`cl`) | Markdown release notes from conventional history |
+| `commitly init` | Optional: git alias, `commit-msg` hook, completions, `.commitly.yaml` |
+| `commitly config` | Inspect and edit configuration (`get` / `set` / `list` / `path`) |
+| `commitly completion` · `man` · `version` | Generated artifacts and version info |
 
 ## Configuration
 
@@ -74,14 +106,7 @@ Neither is ever uploaded. The `commit-msg` hook (optional, installed by `commitl
 
 ## Updates
 
-Update through whatever installed you: 
-
-- `brew upgrade commitly`
-- `scoop update commitly`
-- `apt`/`dnf`
-- `go install ...@latest`.
-
-There is deliberately no `commitly self-update` — a self-updater would fight your package manager.
+Update through whatever installed you: `brew upgrade commitly`, `scoop update commitly`, `apt`/`dnf`, or `go install ...@latest`. There is deliberately no `commitly self-update` — a self-updater would fight your package manager.
 
 ## License
 
