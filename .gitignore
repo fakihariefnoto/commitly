@@ -27,6 +27,15 @@ go.work.sum
 # env file
 .env
 
+# plan docs (read-only reference, not part of source)
+.plan/
+
+# build output
+bin/
+dist/
+
 # Editor/IDE
 # .idea/
 # .vscode/
+
+.DS_store
