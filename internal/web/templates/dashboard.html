@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ .Title }}</title>
+<link rel="stylesheet" href="/static/app.css">
+<script src="/static/app.js" defer></script>
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <h1 class="site-title">commitly</h1>
+    <nav class="filters">
+      <a href="/" {{ if not .View.RepoFilter }}class="active"{{ end }}>All repos</a>
+      <a href="/api/activity.json">JSON</a>
+    </nav>
+    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">◐</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <p class="display">{{ .View.TotalEntries }}</p>
+    <p class="hero-sub">{{ .View.TotalEntries }} commits across {{ .View.RepoCount }} repositories</p>
+  </section>
+
+  <section class="tally">
+    {{ range .TypeCounts }}
+      <span class="chip chip-{{ .Type }}">{{ .Type }} {{ .Count }}</span>
+    {{ end }}
+  </section>
+
+  {{ if eq (len .View.Repos) 0 }}
+  <section class="empty">
+    <h2>Nothing recorded yet</h2>
+    <p>Commits you make with <code>git cm</code> show up here. Only commits made
+    through commitly are recorded — nothing is read from your repositories.</p>
+    <pre>git cm</pre>
+  </section>
+  {{ end }}
+
+  <section class="repo-list">
+    {{ range .View.Repos }}
+    <article class="repo-card">
+      <div class="repo-head">
+        <h2 class="repo-name"><a href="/repo/{{ .Key }}">{{ .Name }}</a></h2>
+        <span class="repo-meta">{{ .Count }} commits · {{ timeAgo .LatestAt }}</span>
+      </div>
+      {{ if .Path }}
+      <p class="repo-path">{{ .Path }}</p>
+      {{ end }}
+      <ul class="commit-list">
+        {{ range .Entries }}
+        <li class="commit-row">
+          <span class="commit-type type-{{ .Type }}{{ if .Breaking }} breaking{{ end }}">{{ typeLabel .Type .Scope .Breaking }}</span>
+          <span class="commit-subject">{{ .Subject }}</span>
+          <span class="commit-sha">{{ shortSHA .SHA }}</span>
+          <time class="commit-time">{{ timeAgo .CommittedAt }}</time>
+        </li>
+        {{ end }}
+      </ul>
+    </article>
+    {{ end }}
+  </section>
+
+  <footer class="site-footer">
+    <p>{{ if .View.Truncated }}Showing the last {{ .View.TotalEntries }} commits — older entries have been discarded. {{ end }}
+    Served locally by commitly. Nothing is uploaded.</p>
+  </footer>
+</main>
+</body>
+</html>

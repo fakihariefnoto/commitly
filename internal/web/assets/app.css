@@ -1,0 +1,205 @@
+:root {
+  --background: #F9FBFA;
+  --surface: #EDF3F0;
+  --surface-raised: #FFFFFF;
+  --border: #D4E3DB;
+  --text: #171C1A;
+  --text-muted: #5C7066;
+  --primary: #047857;
+  --on-primary: #FFFFFF;
+  --accent: #04786B;
+  --error: #C52B20;
+  --warning: #B45309;
+  --success: #1F7A40;
+  --feature: #047857;
+  --fix: #C52B20;
+  --docs: #0369A1;
+  --quality: #7C3AED;
+  --chore: #5C7066;
+  --breaking: #B45309;
+  --radius: 6px;
+  --shadow: 0 1px 2px rgba(23, 28, 26, 0.06);
+}
+
+[data-theme="dark"] {
+  --background: #161D1B;
+  --surface: #212B29;
+  --surface-raised: #2A3532;
+  --border: #374944;
+  --text: #F1F4F3;
+  --text-muted: #9DAFAA;
+  --primary: #21F8BB;
+  --on-primary: #0B1512;
+  --accent: #21F8E0;
+  --error: #E46258;
+  --warning: #F0A44A;
+  --success: #47D17A;
+  --feature: #21F8BB;
+  --fix: #E46258;
+  --docs: #5CC8F5;
+  --quality: #B085F5;
+  --chore: #9DAFAA;
+  --breaking: #F0A44A;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--text);
+  font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.wrap {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.site-header {
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.site-header .wrap {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.site-title {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 600;
+}
+
+.site-title a { color: inherit; text-decoration: none; }
+
+.filters { margin-left: auto; display: flex; gap: 12px; }
+
+.filters a {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.filters a.active, .filters a:hover { color: var(--primary); }
+
+.theme-toggle {
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--text);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 15px;
+  width: 32px;
+  height: 32px;
+}
+
+.hero { padding: 40px 0 8px; }
+
+.display {
+  margin: 0;
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--primary);
+}
+
+.hero-sub { color: var(--text-muted); margin: 4px 0 0; }
+
+.tally { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0 28px; }
+
+.chip {
+  font: 500 13px/20px inherit;
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.repo-list { display: flex; flex-direction: column; gap: 20px; padding-bottom: 48px; }
+
+.repo-card {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px 20px;
+}
+
+.repo-head { display: flex; align-items: baseline; gap: 12px; }
+
+.repo-name { margin: 0; font-size: 19px; font-weight: 600; }
+
+.repo-name a { color: var(--text); text-decoration: none; }
+.repo-name a:hover { color: var(--primary); }
+
+.repo-meta, .repo-path { color: var(--text-muted); font-size: 13px; }
+
+.repo-path { margin: 4px 0 12px; }
+
+.commit-list { list-style: none; margin: 0; padding: 0; }
+
+.commit-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+  font-size: 15px;
+}
+
+.commit-type {
+  font: 600 12px/18px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  flex: 0 0 auto;
+  padding: 1px 8px;
+  border-radius: 4px;
+}
+
+.type-feat { color: var(--feature); background: color-mix(in srgb, var(--feature) 12%, transparent); }
+.type-fix, .type-revert { color: var(--fix); background: color-mix(in srgb, var(--fix) 12%, transparent); }
+.type-docs { color: var(--docs); background: color-mix(in srgb, var(--docs) 12%, transparent); }
+.type-refactor, .type-perf, .type-test, .type-style { color: var(--quality); background: color-mix(in srgb, var(--quality) 12%, transparent); }
+.type-build, .type-ci, .type-chore, .type-deps { color: var(--chore); background: color-mix(in srgb, var(--chore) 12%, transparent); }
+
+.commit-type.breaking { color: var(--breaking); background: color-mix(in srgb, var(--breaking) 14%, transparent); }
+
+.commit-subject { flex: 1 1 auto; }
+
+.commit-sha, .commit-time { color: var(--text-muted); font: 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+.commit-time { flex: 0 0 auto; }
+
+.empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+}
+
+.empty pre {
+  display: inline-block;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 16px;
+  color: var(--primary);
+  font: 600 15px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.site-footer {
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 18px 0 32px;
+}
+
+@media (max-width: 640px) {
+  .commit-row { flex-wrap: wrap; gap: 4px 12px; }
+  .commit-sha { order: 3; }
+}

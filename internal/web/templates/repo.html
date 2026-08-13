@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ .Title }}</title>
+<link rel="stylesheet" href="/static/app.css">
+<script src="/static/app.js" defer></script>
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <h1 class="site-title"><a href="/">commitly</a></h1>
+    <nav class="filters">
+      <a href="/">All repos</a>
+      <a href="/api/activity.json">JSON</a>
+    </nav>
+    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">◐</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="repo-card">
+    <div class="repo-head">
+      <h2 class="repo-name">{{ .Group.Name }}</h2>
+      <span class="repo-meta">{{ .Group.Count }} commits</span>
+    </div>
+    {{ if .Group.Path }}
+    <p class="repo-path">{{ .Group.Path }}</p>
+    {{ end }}
+    <ul class="commit-list">
+      {{ range .Group.Entries }}
+      <li class="commit-row">
+        <span class="commit-type type-{{ .Type }}{{ if .Breaking }} breaking{{ end }}">{{ typeLabel .Type .Scope .Breaking }}</span>
+        <span class="commit-subject">{{ .Subject }}</span>
+        <span class="commit-sha">{{ shortSHA .SHA }}</span>
+        <time class="commit-time">{{ timeAgo .CommittedAt }}</time>
+      </li>
+      {{ end }}
+    </ul>
+  </section>
+</main>
+</body>
+</html>

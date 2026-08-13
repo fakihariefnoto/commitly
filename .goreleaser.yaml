@@ -1,0 +1,73 @@
+# GoReleaser — one binary under two names across 5 channels.
+version: 2
+
+project_name: commitly
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: commitly
+    main: ./cmd/commitly
+    binary: commitly
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.FullCommit}}
+      - -X main.date={{.Date}}
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - id: default
+    formats: [tar.gz, zip]
+    files:
+      - LICENSE
+      - README.md
+    # git-cm: symlink inside the archive for darwin/linux.
+    # NOTE: no wrap_in_directory — Homebrew's bin.install expects the
+    # binary at the archive root.
+    post_hooks:
+      - cmd: 'ln -sf commitly "{{ .ArtifactPath }}/git-cm"'
+
+checksum:
+  name_template: checksums.txt
+
+release:
+  github:
+    owner: fakihariefnoto
+    name: commitly
+
+brews:
+  - name: commitly
+    repository:
+      owner: fakihariefnoto
+      name: homebrew-tap
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
+    directory: Formula
+    homepage: https://github.com/fakihariefnoto/commitly
+    description: Compose Conventional Commits messages, interactively.
+    license: MIT
+    install: |
+      bin.install "commitly"
+      bin.install_symlink bin/"commitly" => "git-cm"
+      bash_completion.install "completions/commitly.bash"
+      zsh_completion.install "completions/_commitly" => "_commitly"
+
+scoops:
+  - name: commitly
+    repository:
+      owner: fakihariefnoto
+      name: scoop-bucket
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
+    bin:
+      - commitly
+      - commitly
