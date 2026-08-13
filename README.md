@@ -6,57 +6,31 @@ One static binary, two names: `commitly` for the full command surface, and a `gi
 
 ## Screenshots
 
-**The `git cm` flow**
+<div align="center">
 
-![Stage changes](screenshots/stagechanges.png)
+<img src="screenshots/stagechanges.png" alt="Stage changes" width="49%"/>
+<img src="screenshots/choose-type.png" alt="Choose a commit type" width="49%"/>
 
-![Choose a commit type](screenshots/choose-type.png)
+<img src="screenshots/footer-desc.png" alt="Footers" width="49%"/>
+<img src="screenshots/confirm.png" alt="Confirm the message" width="49%"/>
 
-![Footers and breaking description](screenshots/footer-desc.png)
+<img src="screenshots/status.png" alt="commitly status" width="49%"/>
 
-![Confirm the message](screenshots/confirm.png)
+<img src="screenshots/server.png" alt="commitly serve" width="49%"/>
+<img src="screenshots/serve.png" alt="commitly serve in a browser" width="49%"/>
 
-**Looking back**
-
-![commitly status](screenshots/status.png)
-
-**The web view**
-
-![commitly serve — terminal](screenshots/server.png)
-
-![commitly serve — browser](screenshots/serve.png)
+</div>
 
 ## Install
 
 `git cm` works immediately after any of these — no `init`, no alias, no config required.
 
-**Homebrew**
-
-```sh
-brew tap fakihariefnoto/tap
-brew install fakihariefnoto/tap/commitly
-```
-
-**Scoop** (Windows)
-
-```sh
-scoop bucket add fakihariefnoto https://github.com/fakihariefnoto/scoop-bucket
-scoop install commitly
-```
-
-**`.deb` / `.rpm`** (Linux)
-
-```sh
-# attach the .deb/.rpm from the release, then:
-sudo dpkg -i commitly_*.deb     # or: sudo rpm -i commitly_*.rpm
-```
-
-**`go install`**
-
-```sh
-go install github.com/fakihariefnoto/commitly/cmd/commitly@latest
-commitly init     # offers the `git cm` alias, since go install can't ship the symlink
-```
+| Channel | Command |
+|---|---|
+| **Homebrew** (macOS) | `brew tap fakihariefnoto/tap`<br>`brew install fakihariefnoto/tap/commitly` |
+| **Scoop** (Windows) | `scoop bucket add fakihariefnoto https://github.com/fakihariefnoto/scoop-bucket`<br>`scoop install commitly` |
+| **`.deb` / `.rpm`** (Linux) | `sudo dpkg -i commitly_*.deb` &nbsp;·&nbsp; `sudo rpm -i commitly_*.rpm` |
+| **`go install`** | `go install github.com/fakihariefnoto/commitly/cmd/commitly@latest`<br>`commitly init` # adds the `git cm` alias (go install can't ship the symlink) |
 
 ## Quick start
 
@@ -79,8 +53,8 @@ commitly serve            # the same history as a local web page
 | `commitly lint` | Validate a message, a commit, or a range (exit `3` on failure — CI-friendly) |
 | `commitly changelog` (`cl`) | Markdown release notes from conventional history |
 | `commitly init` | Optional: git alias, `commit-msg` hook, completions, `.commitly.yaml` |
-| `commitly config` | Inspect and edit configuration (`get`/`set`/`list`/`path`) |
-| `commitly completion` / `man` / `version` | Generated artifacts and version info |
+| `commitly config` | Inspect and edit configuration (`get` / `set` / `list` / `path`) |
+| `commitly completion` · `man` · `version` | Generated artifacts and version info |
 
 ## Configuration
 
