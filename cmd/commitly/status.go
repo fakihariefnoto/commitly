@@ -183,13 +183,16 @@ func parseDuration(s string) time.Duration {
 }
 
 func printOneline(view *activity.ActivityView) {
+	caps := render.Detect()
+	pal := render.NewPalette(render.DetectDark())
+	enabled := caps.Color
 	for _, g := range view.Repos {
 		for _, e := range g.Entries {
-			fmt.Fprintf(render.Out, "%s  %-14s  %s  %s  %s\n",
-				e.CommittedAt.Format("2006-01-02 15:04"),
-				g.Name,
-				typeLabel(e.Type, e.Scope, e.Breaking),
-				e.ShortSHA,
+			fmt.Fprintf(render.Out, "%s  %s  %s  %s  %s\n",
+				pal.Muted(e.CommittedAt.Format("2006-01-02 15:04"), enabled),
+				pal.Primary(fmt.Sprintf("%-14s", g.Name), enabled),
+				pal.Type(typeLabel(e.Type, e.Scope, e.Breaking), e.Breaking, enabled),
+				pal.Muted(e.ShortSHA, enabled),
 				e.Subject)
 		}
 	}
@@ -208,6 +211,10 @@ func typeLabel(typ, scope string, breaking bool) string {
 
 func printActivity(view *activity.ActivityView) {
 	now := time.Now()
+	caps := render.Detect()
+	pal := render.NewPalette(render.DetectDark())
+	enabled := caps.Color
+
 	oldest := ""
 	if !view.OldestRetained.IsZero() {
 		oldest = "last " + humanDuration(now.Sub(view.OldestRetained))
@@ -218,7 +225,7 @@ func printActivity(view *activity.ActivityView) {
 	if oldest != "" {
 		header += ", " + oldest
 	}
-	render.Result("%s", header)
+	render.Result("%s", pal.Text(header, enabled))
 	var filterBits []string
 	if view.SinceFilter != "" {
 		filterBits = append(filterBits, "since "+view.SinceFilter)
@@ -230,30 +237,32 @@ func printActivity(view *activity.ActivityView) {
 		filterBits = append(filterBits, "repo "+view.RepoFilter)
 	}
 	if len(filterBits) > 0 {
-		render.Result("Filters: %s", strings.Join(filterBits, " · "))
+		render.Result("%s", pal.Muted("Filters: "+strings.Join(filterBits, " · "), enabled))
 	}
 	render.Result("")
 
 	for _, g := range view.Repos {
 		rel := humanDuration(now.Sub(g.LatestAt))
-		fmt.Fprintf(render.Out, "%s    %d %s · %s ago\n", g.Name, g.Count, plural(g.Count, "commit", "commits"), rel)
+		fmt.Fprintf(render.Out, "%s    %s\n",
+			pal.Primary(g.Name, enabled),
+			pal.Muted(fmt.Sprintf("%d %s · %s ago", g.Count, plural(g.Count, "commit", "commits"), rel), enabled))
 		if g.Path != "" {
 			missing := ""
 			if !g.PathExists {
-				missing = "   ▲ this path no longer exists"
+				missing = pal.Warning("   ▲ this path no longer exists", enabled)
 			}
-			fmt.Fprintf(render.Out, "%s%s\n", g.Path, missing)
+			fmt.Fprintf(render.Out, "%s%s\n", pal.Muted(g.Path, enabled), missing)
 		}
 		for _, e := range g.Entries {
 			diff := now.Sub(e.CommittedAt)
 			fmt.Fprintf(render.Out, "  %-12s  %-60s  %s  %s\n",
-				typeLabel(e.Type, e.Scope, e.Breaking),
+				pal.Type(typeLabel(e.Type, e.Scope, e.Breaking), e.Breaking, enabled),
 				truncate(e.Subject, 60),
-				e.ShortSHA,
-				shortAgo(diff))
+				pal.Muted(e.ShortSHA, enabled),
+				pal.Muted(shortAgo(diff), enabled))
 		}
 		if statusFlags.perRepo > 0 && g.Count > len(g.Entries) {
-			fmt.Fprintf(render.Out, "  … %d more — commitly status --repo %s --per-repo 0\n", g.Count-len(g.Entries), g.Name)
+			fmt.Fprintf(render.Out, "  %s\n", pal.Muted(fmt.Sprintf("… %d more — commitly status --repo %s --per-repo 0", g.Count-len(g.Entries), g.Name), enabled))
 		}
 		render.Result("")
 	}
@@ -261,15 +270,15 @@ func printActivity(view *activity.ActivityView) {
 	// Type tally.
 	var tally []string
 	for _, tc := range view.TypeCounts {
-		tally = append(tally, fmt.Sprintf("%s %d", tc.Type, tc.Count))
+		tally = append(tally, pal.Type(fmt.Sprintf("%s %d", tc.Type, tc.Count), false, enabled))
 	}
 	render.Result("%s", strings.Join(tally, " · "))
 	render.Result("")
 
 	if view.Truncated {
-		render.Result("Showing the last %d commits — older entries have been discarded.", view.TotalEntries)
+		render.Result("%s", pal.Muted(fmt.Sprintf("Showing the last %d commits — older entries have been discarded.", view.TotalEntries), enabled))
 	}
-	render.Result("Browse in a browser: commitly serve")
+	render.Result("%s", pal.Primary("Browse in a browser: commitly serve", enabled))
 }
 
 func statusJSON(view *activity.ActivityView) error {
@@ -436,66 +445,89 @@ func printPeriod(v *stats.View, p *stats.PeriodStat) {
 	if p == nil {
 		return
 	}
-	render.Result("Statistics — %s (%s to %s)", p.Label, p.From, p.To)
+	caps := render.Detect()
+	pal := render.NewPalette(render.DetectDark())
+	enabled := caps.Color
+	render.Result("%s", pal.Text("Statistics — "+p.Label+" ("+p.From+" to "+p.To+")", enabled))
 	render.Result("")
-	render.Result("  %d commits · %d repositories · %d of %d active days",
-		p.Commits, p.ReposTouched, p.ActiveDays, p.PeriodDays)
+	render.Result("  %s", pal.Text(fmt.Sprintf("%d commits · %d repositories · %d of %d active days",
+		p.Commits, p.ReposTouched, p.ActiveDays, p.PeriodDays), enabled))
 	render.Result("")
 	for _, tc := range p.ByType {
-		render.Result("  %-12s %d", tc.Type, tc.Count)
+		render.Result("  %s %d", pal.Type(tc.Type, false, enabled), tc.Count)
 	}
 	if !p.FullyCovered {
 		render.Result("")
-		render.Result("  ⚠ Counters only reach back to %s.", v.Coverage.EarliestRow)
+		render.Result("  %s", pal.Warning("⚠ Counters only reach back to "+v.Coverage.EarliestRow+".", enabled))
 	}
 	return
 }
 
 func printStatsFull(v *stats.View) {
-	render.Result("Statistics — %s", time.Now().Format("2 Jan 2006"))
+	caps := render.Detect()
+	pal := render.NewPalette(render.DetectDark())
+	enabled := caps.Color
+
+	render.Result("%s", pal.Primary("Statistics — "+time.Now().Format("2 Jan 2006"), enabled))
 	render.Result("")
-	fmt.Fprintf(render.Out, "%-24s %14s %16s %14s\n", "", "THIS WEEK", "THIS MONTH", "ALL TIME")
+	fmt.Fprintf(render.Out, "%-24s %s %s %s\n", "",
+		pal.Muted(fmt.Sprintf("%16s", "THIS WEEK"), enabled),
+		pal.Muted(fmt.Sprintf("%16s", "THIS MONTH"), enabled),
+		pal.Muted(fmt.Sprintf("%14s", "ALL TIME"), enabled))
 	week, month, all := v.Periods["week"], v.Periods["month"], v.Periods["all"]
-	weekDelta, monthDelta := deltaStr(week), deltaStr(month)
-	fmt.Fprintf(render.Out, "%-24s %10d %8s %12d %10s %10d\n", "Commits", week.Commits, weekDelta, month.Commits, monthDelta, all.Commits)
-	fmt.Fprintf(render.Out, "%-24s %14d %16d %14d\n", "Repositories", week.ReposTouched, month.ReposTouched, all.ReposTouched)
-	fmt.Fprintf(render.Out, "%-24s %8d/%-5d %10d/%-5d %14d\n", "Active days", week.ActiveDays, week.PeriodDays, month.ActiveDays, month.PeriodDays, all.ActiveDays)
+	weekDelta, monthDelta := coloredDelta(pal, enabled, week), coloredDelta(pal, enabled, month)
+	fmt.Fprintf(render.Out, "%-24s %s %s %s\n", pal.Text("Commits", enabled),
+		pal.Primary(fmt.Sprintf("%10d", week.Commits), enabled)+" "+weekDelta,
+		pal.Primary(fmt.Sprintf("%12d", month.Commits), enabled)+" "+monthDelta,
+		pal.Primary(fmt.Sprintf("%10d", all.Commits), enabled))
+	fmt.Fprintf(render.Out, "%-24s %s %s %s\n", pal.Text("Repositories", enabled),
+		pal.Muted(fmt.Sprintf("%14d", week.ReposTouched), enabled),
+		pal.Muted(fmt.Sprintf("%16d", month.ReposTouched), enabled),
+		pal.Muted(fmt.Sprintf("%14d", all.ReposTouched), enabled))
+	fmt.Fprintf(render.Out, "%-24s %s %s %s\n", pal.Text("Active days", enabled),
+		pal.Muted(fmt.Sprintf("%8d/%-5d", week.ActiveDays, week.PeriodDays), enabled),
+		pal.Muted(fmt.Sprintf("%10d/%-5d", month.ActiveDays, month.PeriodDays), enabled),
+		pal.Muted(fmt.Sprintf("%14d", all.ActiveDays), enabled))
 
 	// By type, top 6.
 	render.Result("")
-	render.Result("  By type")
+	render.Result("  %s", pal.Text("By type", enabled))
 	merged := mergeTypeCounts(week.ByType, month.ByType, all.ByType)
 	for _, t := range merged[:min(6, len(merged))] {
 		wk, mo, al := typeCount(week.ByType, t.Type), typeCount(month.ByType, t.Type), typeCount(all.ByType, t.Type)
-		fmt.Fprintf(render.Out, "    %-12s %8d %-10s %10d %-10s %10d %-10s\n",
-			t.Type, wk, bar(wk, maxCount(week.ByType)), mo, bar(mo, maxCount(month.ByType)), al, bar(al, maxCount(all.ByType)))
+		fmt.Fprintf(render.Out, "    %s %8d %-10s %10d %-10s %10d %-10s\n",
+			pal.Type(t.Type, false, enabled), wk, bar(wk, maxCount(week.ByType)), mo, bar(mo, maxCount(month.ByType)), al, bar(al, maxCount(all.ByType)))
 	}
 
 	// Sparkline.
 	render.Result("")
-	render.Result("  Last 28 days")
+	render.Result("  %s", pal.Text("Last 28 days", enabled))
 	render.Result("    %s", sparklineStr(v.Sparkline))
 
 	// Quality + adherence.
 	render.Result("")
-	fmt.Fprintf(render.Out, "  Message quality                    Convention adherence\n")
+	fmt.Fprintf(render.Out, "  %s                    %s\n", pal.Text("Message quality", enabled), pal.Text("Convention adherence", enabled))
 	adherence := v.Adherence
 	if !adherence.Measured {
-		fmt.Fprintf(render.Out, "    with a body      %4.0f%%               not measured\n", v.Quality.WithBodyPct)
+		fmt.Fprintf(render.Out, "    %s %4.0f%%               %s\n", pal.Text("with a body", enabled), v.Quality.WithBodyPct, pal.Muted("not measured", enabled))
 	} else {
-		fmt.Fprintf(render.Out, "    with a body      %4.0f%%               overall    %d/%d   %.0f%%\n", v.Quality.WithBodyPct, adherence.Conforming, adherence.Total, adherence.Rate*100)
+		fmt.Fprintf(render.Out, "    %s %4.0f%%               %s %d/%d   %.0f%%\n",
+			pal.Text("with a body", enabled), v.Quality.WithBodyPct,
+			pal.Text("overall", enabled), adherence.Conforming, adherence.Total, adherence.Rate*100)
 	}
-	fmt.Fprintf(render.Out, "    breaking         %4.0f%%               across %d repositories\n", v.Quality.BreakingPct, adherence.ReposCounted)
-	fmt.Fprintf(render.Out, "    median subject  %3d chars\n", v.Quality.SubjectMedian)
+	fmt.Fprintf(render.Out, "    %s %4.0f%%               %s %d %s\n",
+		pal.Text("breaking", enabled), v.Quality.BreakingPct,
+		pal.Muted("across", enabled), adherence.ReposCounted, pal.Muted("repositories", enabled))
+	fmt.Fprintf(render.Out, "    %s  %3d chars\n", pal.Text("median subject", enabled), v.Quality.SubjectMedian)
 
 	// Coverage footer.
 	render.Result("")
 	if v.Coverage.EarliestRow != "" {
-		render.Result("Counters cover %s → today. All-time totals include", v.Coverage.EarliestRow)
+		render.Result("%s", pal.Muted("Counters cover "+v.Coverage.EarliestRow+" → today. All-time totals include", enabled))
 		if v.Coverage.AllTimeIncludesFolded {
-			render.Result("folded history from before that.")
+			render.Result("%s", pal.Muted("folded history from before that.", enabled))
 		} else {
-			render.Result("only retained rows.")
+			render.Result("%s", pal.Muted("only retained rows.", enabled))
 		}
 	}
 	return
@@ -589,6 +621,22 @@ func deltaStr(p *stats.PeriodStat) string {
 		return fmt.Sprintf("▲ +%.0f%%", d)
 	case d < 0:
 		return fmt.Sprintf("▼ %.0f%%", d)
+	default:
+		return ""
+	}
+}
+
+// coloredDelta wraps a delta with an up/down color.
+func coloredDelta(pal *render.Palette, enabled bool, p *stats.PeriodStat) string {
+	if p == nil || p.DeltaPct == nil {
+		return ""
+	}
+	d := *p.DeltaPct
+	switch {
+	case d > 0:
+		return pal.Primary(deltaStr(p), enabled)
+	case d < 0:
+		return pal.Error(deltaStr(p), enabled)
 	default:
 		return ""
 	}
