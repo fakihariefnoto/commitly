@@ -89,15 +89,12 @@ type model struct {
 	aborted   bool
 }
 
-// loadMenu builds the Bubble Tea list for a stage. Height is sized from the
-// option count so even 2–3 option menus (Yes/No, Commit/Edit again) show
-// every option instead of clipping the tail in the viewport.
+// loadMenu builds the Bubble Tea list for a stage. A fixed compact height
+// fits 2–3 option menus (Yes/No, Commit/Edit again, small scope lists) while
+// keeping long lists (11 types) small enough for a narrow IDE terminal — they
+// scroll with a page indicator and a "↑/↓ scroll · N options" note.
 func (m *model) loadMenu(title string, options []Option) {
-	height := len(options)*2 + 2
-	if height > 24 {
-		height = 24
-	}
-	m.menu = newList(title, options, height)
+	m.menu = newList(title, options, 8)
 }
 
 func newList(title string, options []Option, height int) list.Model {
@@ -112,7 +109,7 @@ func newList(title string, options []Option, height int) list.Model {
 	l.SetShowStatusBar(false)
 	l.SetShowHelp(false)
 	l.SetFilteringEnabled(true)
-	l.SetShowPagination(false)
+	l.SetShowPagination(true)
 	return l
 }
 
@@ -371,23 +368,48 @@ func (m *model) View() string {
 	switch m.stage {
 	case stType, stScope, stSaveScope, stBreaking, stConfirm:
 		body = m.menu.View()
+		// Long lists scroll — tell the user and show the count.
+		if n := len(m.menu.Items()); n > 3 {
+			body += "\n  ↑/↓ scroll · " + fmt.Sprintf("%d options", n) + "\n"
+		}
 	case stSubject, stBreakDesc, stBody, stFooters, stNewScope:
 		body = m.input.View()
 	}
 
-	previewText := ""
-	if m.stage != stType && m.stage != stConfirm {
-		previewText = previewBox(m.msg, m.opts)
-	}
-
+	// The preview always shows everything chosen so far (type, scope,
+	// subject, body, footers), reflecting the live selection on menu stages.
 	out := body
-	if previewText != "" {
-		out += "\n\n" + previewText + "\n"
+	if m.stage != stConfirm {
+		out += "\n\n" + previewBox(m.previewMessage(), m.opts) + "\n"
 	}
 	if m.addScopeNote != "" {
 		out += "\n▲ " + m.addScopeNote + "\n"
 	}
 	return out
+}
+
+// previewMessage is the message as it stands, with the current menu
+// selection folded in so the preview updates live while picking a type or
+// scope — not just after the step is confirmed.
+func (m *model) previewMessage() commit.CommitMessage {
+	msg := m.msg
+	switch m.stage {
+	case stType:
+		if s := m.selection(); s != "" {
+			msg.Type = s
+		}
+	case stScope:
+		if s := m.selection(); s != "" && s != "(none)" && !strings.HasPrefix(s, "+ ") {
+			msg.Scope = s
+		} else {
+			msg.Scope = ""
+		}
+	case stBreaking:
+		msg.Breaking = m.selection() == "Yes"
+	case stSaveScope:
+		// Scope was typed; keep it.
+	}
+	return msg
 }
 
 // preserveInput copies the active input's current value back into msg before
