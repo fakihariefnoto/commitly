@@ -184,3 +184,20 @@ func TestAddNewScope(t *testing.T) {
 		t.Fatalf("stage=%d want stSubject", nm2.stage)
 	}
 }
+
+func TestCommitPushOption(t *testing.T) {
+	m := newModel(testOpts())
+	m.stage = stConfirm
+	m.loadStage()
+	// options: Commit, Commit + Push, Edit again
+	m.Update(tea.KeyMsg{Type: tea.KeyDown}) // → Commit + Push
+	final, cmd := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	_ = cmd
+	nm := final.(*model)
+	if !nm.confirmed {
+		t.Fatal("not confirmed")
+	}
+	if !nm.push {
+		t.Fatal("expected push=true")
+	}
+}

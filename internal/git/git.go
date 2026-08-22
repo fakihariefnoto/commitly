@@ -168,6 +168,22 @@ func MostRecentTag(ctx context.Context) string {
 	return strings.TrimSpace(out)
 }
 
+// HasRemote reports whether an origin remote exists.
+func HasRemote(ctx context.Context) bool {
+	_, _, err := Run(ctx, "remote", "get-url", "origin")
+	return err == nil
+}
+
+// Push pushes the current branch to origin, setting the upstream. Used by
+// "Commit + Push".
+func Push(ctx context.Context) (string, error) {
+	out, stderr, err := Run(ctx, "push", "-u", "origin", "HEAD")
+	if err != nil {
+		return strings.TrimSpace(stderr), err
+	}
+	return strings.TrimSpace(out), nil
+}
+
 // CommitResult is the parsed output of a successful git commit.
 type CommitResult struct {
 	SHA          string

@@ -156,7 +156,7 @@ func runCommit(ctx context.Context) error {
 	}
 
 	// Compose the message.
-	msg, err := composeMessage(ctx, cfg, caps, filesToStage, hadStaged)
+	msg, push, err := composeMessage(ctx, cfg, caps, filesToStage, hadStaged)
 	if err != nil {
 		if render.KindOf(err) == render.ExitAborted {
 			render.Note("Aborted. Nothing was staged and no commit was made.")
@@ -243,6 +243,21 @@ func runCommit(ctx context.Context) error {
 	// Record history (AD-11): after success, best-effort.
 	recordEntry(ctx, cfg, root, res, msg, filesToStage)
 
+	// Commit + Push: push the current branch after the commit.
+	if push {
+		if !git.HasRemote(ctx) {
+			render.Note("▲ No origin remote — commit created but not pushed.")
+		} else {
+			render.Note("Pushing to origin…")
+			if out, perr := git.Push(ctx); perr != nil {
+				render.Note("▲ Push failed:\n  %s", out)
+				render.Note("  The commit is saved locally — push manually when ready.")
+			} else {
+				render.Note("✓ Pushed to origin.")
+			}
+		}
+	}
+
 	if globals.json {
 		payload := map[string]any{
 			"sha":           res.SHA,
@@ -289,7 +304,7 @@ func priorStaged(changes []git.FileChange) bool {
 // TUI. The form runs whenever a terminal is present and type+subject aren't
 // already given — every prompt has a flag equivalent (G6), so the same
 // command works in a script.
-func composeMessage(ctx context.Context, cfg *config.Config, caps *render.Caps, filesToStage []string, hadStaged bool) (ccommit.CommitMessage, error) {
+func composeMessage(ctx context.Context, cfg *config.Config, caps *render.Caps, filesToStage []string, hadStaged bool) (ccommit.CommitMessage, bool, error) {
 	interactive := interactiveAllowed(caps)
 	hasAll := commitFlags.typ != "" && commitFlags.message != ""
 	if interactive && !hasAll {
@@ -300,7 +315,7 @@ func composeMessage(ctx context.Context, cfg *config.Config, caps *render.Caps, 
 
 // composeInteractive runs the sequential huh wizard with flag/amend/scope
 // defaults.
-func composeInteractive(ctx context.Context, cfg *config.Config, caps *render.Caps, filesToStage []string) (ccommit.CommitMessage, error) {
+func composeInteractive(ctx context.Context, cfg *config.Config, caps *render.Caps, filesToStage []string) (ccommit.CommitMessage, bool, error) {
 	opts := tui.CommitOpts{
 		Types:         cfg.VisibleTypes(),
 		Scopes:        cfg.Scope.Values,
@@ -354,24 +369,24 @@ func composeInteractive(ctx context.Context, cfg *config.Config, caps *render.Ca
 		}
 	}
 
-	msg, err := tui.RunCommitWizard(ctx, opts)
+	msg, push, err := tui.RunCommitWizard(ctx, opts)
 	if err != nil {
 		if tui.IsAborted(err) {
-			return msg, render.AbortError()
+			return msg, false, render.AbortError()
 		}
-		return msg, err
+		return msg, false, err
 	}
 
 	if msg.Scope != "" && cfg.Scope.Mode == "list" && len(cfg.Scope.Values) > 0 && !scopeKnown(cfg, msg.Scope) {
-		return msg, render.Usage(fmt.Sprintf("unknown scope %q", msg.Scope),
+		return msg, false, render.Usage(fmt.Sprintf("unknown scope %q", msg.Scope),
 			"allowed: "+strings.Join(cfg.ScopeNames(), " "))
 	}
-	return msg, nil
+	return msg, push, nil
 }
 
 // composeFromFlags builds the message purely from flags (the non-interactive
 // path). Missing required values error with exit 2 rather than prompting.
-func composeFromFlags(cfg *config.Config, filesToStage []string) (ccommit.CommitMessage, error) {
+func composeFromFlags(cfg *config.Config, filesToStage []string) (ccommit.CommitMessage, bool, error) {
 	m := ccommit.CommitMessage{}
 
 	if commitFlags.amend {
@@ -386,12 +401,12 @@ func composeFromFlags(cfg *config.Config, filesToStage []string) (ccommit.Commit
 	if commitFlags.typ != "" {
 		m.Type = commitFlags.typ
 	} else if m.Type == "" {
-		return m, render.Usage("no commit type given and stdin is not a terminal",
+		return m, false, render.Usage("no commit type given and stdin is not a terminal",
 			"Pass --type and --message, or run interactively:",
 			`  commitly commit --type fix --message "handle empty scope list"`)
 	}
 	if ct := cfg.FindType(m.Type); ct == nil {
-		return m, render.Usage(fmt.Sprintf("unknown commit type %q", m.Type),
+		return m, false, render.Usage(fmt.Sprintf("unknown commit type %q", m.Type),
 			"Did you mean "+didYouMean(m.Type, cfg.TypeNames())+"?",
 			"This repository allows:",
 			"  "+strings.Join(cfg.TypeNames(), "  "),
@@ -406,7 +421,7 @@ func composeFromFlags(cfg *config.Config, filesToStage []string) (ccommit.Commit
 		}
 	}
 	if m.Scope != "" && cfg.Scope.Mode == "list" && len(cfg.Scope.Values) > 0 && !scopeKnown(cfg, m.Scope) {
-		return m, render.Usage(fmt.Sprintf("unknown scope %q", m.Scope),
+		return m, false, render.Usage(fmt.Sprintf("unknown scope %q", m.Scope),
 			"allowed: "+strings.Join(cfg.ScopeNames(), " "))
 	}
 
@@ -420,7 +435,7 @@ func composeFromFlags(cfg *config.Config, filesToStage []string) (ccommit.Commit
 	if commitFlags.message != "" {
 		m.Subject = commitFlags.message
 	} else if m.Subject == "" {
-		return m, render.Usage("no commit message given and stdin is not a terminal",
+		return m, false, render.Usage("no commit message given and stdin is not a terminal",
 			"Pass --message, or run interactively:",
 			`  commitly commit --type fix --message "handle empty scope list"`)
 	}
@@ -433,7 +448,7 @@ func composeFromFlags(cfg *config.Config, filesToStage []string) (ccommit.Commit
 		token, value := splitFooterFlag(f)
 		m.Footers = append(m.Footers, ccommit.Footer{Token: token, Value: value})
 	}
-	return m, nil
+	return m, false, nil
 }
 
 func pickFiles(ctx context.Context, changes []git.FileChange, caps *render.Caps) ([]string, error) {

@@ -87,6 +87,7 @@ type model struct {
 
 	confirmed bool
 	aborted   bool
+	push      bool
 }
 
 // loadMenu builds the Bubble Tea list for a stage. A fixed compact height
@@ -174,7 +175,11 @@ func (m *model) loadStage() {
 		m.input = newInput(`footers (optional), e.g. "Closes #12"`)
 		m.input.SetValue(footerText(m.msg.Footers))
 	case stConfirm:
-		m.loadMenu("Commit this message?", []Option{{Value: "Commit"}, {Value: "Edit again"}})
+		m.loadMenu("Commit this message?", []Option{
+			{Value: "Commit"},
+			{Value: "Commit + Push", Description: "also push the current branch"},
+			{Value: "Edit again"},
+		})
 	}
 }
 
@@ -337,8 +342,13 @@ func (m *model) advance() tea.Cmd {
 		}
 		m.msg.Footers = next
 	case stConfirm:
-		if m.selection() == "Commit" {
+		switch m.selection() {
+		case "Commit":
 			m.confirmed = true
+			return tea.Quit
+		case "Commit + Push":
+			m.confirmed = true
+			m.push = true
 			return tea.Quit
 		}
 		// Edit again: keep type/scope/subject/body, but re-answer breaking
@@ -461,9 +471,11 @@ func removeBreakingFooters(footers []commit.Footer) []commit.Footer {
 }
 
 // RunCommitWizard runs the interactive commit wizard and returns the
-// composed message. It uses the standard Bubble Tea list component, renders
-// inline (no full-screen), and keeps a live preview visible while composing.
-func RunCommitWizard(ctx context.Context, opts CommitOpts) (commit.CommitMessage, error) {
+// composed message plus whether the user chose "Commit + Push" (push the
+// current branch after committing). It uses the standard Bubble Tea list
+// component, renders inline (no full-screen), and keeps a live preview
+// visible while composing.
+func RunCommitWizard(ctx context.Context, opts CommitOpts) (commit.CommitMessage, bool, error) {
 	m := newModel(opts)
 	programOpts := []tea.ProgramOption{}
 	if ctx != nil {
@@ -472,13 +484,13 @@ func RunCommitWizard(ctx context.Context, opts CommitOpts) (commit.CommitMessage
 	p := tea.NewProgram(m, programOpts...)
 	final, err := p.Run()
 	if err != nil {
-		return commit.CommitMessage{}, err
+		return commit.CommitMessage{}, false, err
 	}
 	cm := final.(*model)
 	if cm.aborted || !cm.confirmed {
-		return commit.CommitMessage{}, ErrAborted
+		return commit.CommitMessage{}, false, ErrAborted
 	}
-	return cm.msg, nil
+	return cm.msg, cm.push, nil
 }
 
 func minInt(a, b int) int {
