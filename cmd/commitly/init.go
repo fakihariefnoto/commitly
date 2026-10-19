@@ -117,7 +117,7 @@ func runInit(ctx context.Context) error {
 					render.Note("")
 					render.Note("  Or replace it entirely (your current hook is overwritten):")
 					render.Note("")
-					render.Note("      commitly init --hook --force")
+					render.Note("      commitly init --force")
 				} else {
 					results = append(results, stepResult{Name: "hook", Status: "failed", Detail: err.Error()})
 				}
