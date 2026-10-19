@@ -1,41 +1,19 @@
 # commitly
 
-> Compose [Conventional Commits](https://www.conventionalcommits.org/) messages without thinking about the format — in your terminal, or as `git cm`.
-
-One static binary, two names: `commitly` for the full command surface, and a `git-cm` symlink so `git cm` just works with **zero configuration**. Everything runs locally and offline — nothing is ever uploaded.
-
-## Why commitly?
-
-Writing a good commit message is a habit, but remembering the format is friction. Most of us have typed a message, hit enter, and then watched CI reject it — or worse, shipped a `wip` commit into history that a changelog generator silently drops a year later.
-
-Commitly removes that friction:
-
-- **Stop memorizing the format.** Pick a type from a menu, tab through scope and subject, and a live preview shows the exact message as you compose it.
-- **Consistent history, automatically.** The optional `commit-msg` hook validates every commit — even ones made with plain `git commit` — so the convention holds without anyone enforcing it.
-- **Changelogs that work.** Conventional history turns into release notes with one command (`commitly changelog`), instead of diffing tags by hand.
-- **See what you've actually done.** `commitly status` shows your recent commits across every repo; `commitly serve` renders the same view in your browser.
-- **Zero cost to adopt.** No config file required, works offline, one static binary with no runtime to install. `git cm` works the moment it's on your `$PATH`.
-
-If you've ever had a commit rejected for "missing space after the colon," this tool is for you.
-
-## Screenshots
-
-<div align="center">
-
-**The whole flow**
+Write [Conventional Commits](https://www.conventionalcommits.org/) without
+thinking about the format. In your terminal, or as `git cm`.
 
 ![Commitly in action](screenshots/overall.gif)
 
-<br>
+You know the message you want. The hard part is remembering whether it's
+`feat(api):` or `feat: api`, where the space goes, and whether this counts as a
+breaking change. Commitly turns that into a menu: pick a type, pick a scope,
+type the subject. A live preview shows the exact message before you commit it.
 
-<img src="screenshots/status.png" alt="commitly status" width="49%"/>
-<img src="screenshots/server.png" alt="commitly serve" width="49%"/>
-
-</div>
+It's one static binary with no runtime and no config file. Everything runs
+offline — nothing is ever uploaded.
 
 ## Install
-
-`git cm` works immediately after any of these — no `init`, no alias, no config required.
 
 **Homebrew** (macOS and Linux)
 
@@ -44,194 +22,184 @@ brew tap fakihariefnoto/tap
 brew install fakihariefnoto/tap/commitly
 ```
 
-**`go install`**
+**Go**
 
 ```sh
 go install github.com/fakihariefnoto/commitly/cmd/commitly@latest
-commitly init     # offers the `git cm` alias, since go install can't ship the symlink
+commitly init     # offers the `git cm` alias
 ```
 
-**Prebuilt binary**
+**Or grab a binary.** Download the archive for your platform from the
+[releases page](https://github.com/fakihariefnoto/commitly/releases) and put
+`commitly` on your `$PATH`. It includes shell completions and a man page.
 
-Download the archive for your platform from the
-[releases page](https://github.com/fakihariefnoto/commitly/releases), extract it,
-and put `commitly` on your `$PATH`. The archive also contains shell completions
-in `completions/` and a man page in `man/`. You get `git cm` here by running
-`commitly init` to install the alias, or by symlinking `git-cm` to `commitly`
-yourself.
-
-## Quick start
+## Use it
 
 ```sh
-git cm                    # compose a conventional commit, interactively
-git cm -a                 # pick files to stage, then compose
+git cm                    # compose a commit
+git cm -a                 # pick files to stage first
 commitly lint --range origin/main..HEAD
 commitly changelog        # release notes since the last tag
 commitly status           # what you've committed across every repo
-commitly serve            # the same history as a local web page
+commitly serve            # the same history in a browser
 ```
 
-## Commands
+The commit flow asks for type, scope, subject, whether it breaks anything, and
+an optional body. `Esc` goes back a step. `Enter` on the preview commits.
 
-| Command | Purpose |
-|---|---|
-| `commitly commit` (`git cm`) | Compose and create a conventional commit |
-| `commitly status` (`st`) | Your recent commits across every repo |
-| `commitly serve` | Browse the same history in a browser (read-only, localhost) |
-| `commitly lint` | Validate a message, a commit, or a range (exit `3` on failure — CI-friendly) |
-| `commitly changelog` (`cl`) | Markdown release notes from conventional history |
-| `commitly init` | Optional: git alias, `commit-msg` hook, completions, `.commitly.yaml` |
-| `commitly config` | Inspect and edit configuration (`get` / `set` / `list` / `path`) |
-| `commitly completion` · `man` · `version` | Generated artifacts and version info |
-
-## How `git cm` works
-
-One binary is installed under **two names**: `commitly` and a `git-cm` symlink. Git resolves `git cm` to any `git-cm` on `$PATH`, and commitly detects that it was invoked as `git-cm` and runs the commit flow — so `git cm` and `git cm -a` work with no alias and no setup.
-
-The only exception is `go install`, which can't create a symlink — there, `commitly init` offers a `git config --global alias.cm` instead.
-
-## Composing a commit
-
-Run `git cm` (or `git cm -a` to pick files to stage first). A guided flow walks you through:
-
-1. **Type** — pick from a menu (feat, fix, docs, …; `/` filters)
-2. **Scope** — pick one, or add a new one for the repo (see [Scopes](#scopes))
-3. **Subject** — type the description (max length enforced live)
-4. **Breaking change?** — Yes/No; if yes, describe what breaks
-5. **Body** and **Footers** (optional)
-6. **Confirm** — a live preview shows the exact message; `Enter` commits, or pick "Edit again"
-
-Every step can be escaped back with `Esc`. The whole flow is also scriptable with flags:
+Every prompt has a flag equivalent, so the same command works in a script:
 
 ```sh
 git cm --type fix --scope api --message "handle empty scope list"
 ```
 
-On a non-terminal (a pipe, CI, a hook), missing values are an error rather than a hanging prompt — exit `2`. `COMMITLY_NO_TUI=1` forces the non-interactive path even on a terminal.
+Without a terminal — a pipe, CI, a hook — missing values are an error instead
+of a hanging prompt. `COMMITLY_NO_TUI=1` forces that path even on a terminal.
+
+## Commands
+
+| Command | What it does |
+|---|---|
+| `commitly commit` (`git cm`) | Compose and create a commit |
+| `commitly status` (`st`) | Your recent commits across every repo |
+| `commitly serve` | The same history in a browser, read-only on localhost |
+| `commitly lint` | Check a message, a commit, or a range (exit `3` on failure) |
+| `commitly changelog` (`cl`) | Markdown release notes from conventional history |
+| `commitly init` | Optional extras: alias, hook, completions, starter config |
+| `commitly config` | `get` / `set` / `list` / `path` |
+| `completion` · `man` · `version` | Generated artifacts and version info |
+
+## The `git cm` trick
+
+One binary, two names. Git resolves `git cm` to any `git-cm` on your `$PATH`, so
+the Homebrew formula installs a symlink and commitly notices when it was invoked
+that way. No alias, no setup, `git cm` just works.
+
+`go install` can't create a symlink, which is the one case where `commitly init`
+offers a `git config --global alias.cm` instead.
 
 ## Scopes
 
-A scope labels which area of the code a change touches: `feat(api): …`, `fix(cli): …`. It's optional — `(none)` skips it — and the wizard only asks when the repo has scopes configured.
+A scope labels the area a change touches: `feat(api):`, `fix(cli):`. It's
+optional, and commitly only asks when the repo has scopes configured.
 
-**Set the scope list from the CLI:**
+Set them from the CLI — this writes a `.commitly.yaml` in the repo:
 
 ```sh
 commitly config set scope.values api,cli,web --local
 ```
 
-This writes a `.commitly.yaml` in the repo (creating it if needed):
+Or write the file yourself, with descriptions that show up in the menu:
 
 ```yaml
 scope:
   values:
-    - api
-    - cli
-    - web
-```
-
-**Or edit the file directly:**
-
-```yaml
-scope:
-  values:
-    - { name: api,   description: The command-line surface }
-    - { name: tui,   description: Terminal UI and rendering }
+    - { name: api, description: The command-line surface }
+    - { name: tui, description: Terminal UI and rendering }
   mode: list        # list | free | auto | off
 ```
 
-**Or add one mid-commit:** in the scope menu, pick **"+ Add new scope…"**, type the name, and it's used for the commit *and* written to the repo config for next time.
+You can also add one mid-commit: pick **"+ Add new scope…"**, type the name, and
+it's used for this commit and saved for next time.
 
-**`scope.mode` behavior:**
-
-| mode | behavior |
+| `scope.mode` | What happens |
 |---|---|
-| `list` | pick from `values` (arrows) |
-| `free` | type any scope |
-| `auto` | pre-filled from changed file paths (globs under `scope.auto`) |
-| `off` | never asked |
+| `list` | Pick from `values` with the arrow keys |
+| `free` | Type any scope |
+| `auto` | Pre-filled from the changed file paths |
+| `off` | Never asked |
 
-With no values and mode `list`, the step is skipped entirely. A scope typed on a run where it isn't persisted still works for that commit.
+## The commit-msg hook
 
-## The `commit-msg` hook
+`commitly init --all` installs a hook that runs `commitly lint` on **every**
+commit in the repo — including ones made with plain `git commit`. Messages that
+don't conform get rejected with the specific violation, so the convention holds
+even when someone forgets to use the tool.
 
-`commitly init --hook` installs `.git/hooks/commit-msg`, which runs `commitly lint --file "$1" --hook` on **every** commit in the repo — including ones made with plain `git commit`. Non-conforming messages are rejected with the specific violation, so the convention holds without anyone enforcing it.
-
-Two things the hook can do, separately:
+The hook does two things, and you can turn the second off:
 
 - **Validate** — always on, unless the hook isn't installed.
-- **Count** — when `stats.count_from_hook` is on (default), the hook records a counter for `commitly status --stats`: date, repo, conforming yes/no, type, yours-or-not. **No message text, no SHA, no paths.** This is disclosed in full before the hook is installed.
+- **Count** — feeds `commitly status --stats` with date, repo, conforming
+  yes/no, type, and whether it was yours. No message text, no SHA, no paths.
+  This is spelled out in full before the hook is installed.
 
 ```sh
 commitly config set stats.count_from_hook false    # keep validation, stop counting
 ```
 
-If a `.git/hooks/commit-msg` already exists and wasn't written by commitly, `init` refuses to overwrite it (use `--force` to replace, or chain the check yourself). `core.hooksPath` is respected, so a shared `.githooks/` directory works.
+If a `.git/hooks/commit-msg` already exists and wasn't written by commitly,
+`init` won't overwrite it — use `--force`, or add the check to your hook
+yourself. `core.hooksPath` is respected, so a shared `.githooks/` directory
+works.
 
 ## Configuration
 
-Config resolves from five sources, highest first:
+Config comes from five places, highest wins:
 
-1. Command flag (`--type fix`)
-2. Environment (`COMMITLY_SUBJECT__MAX_LENGTH=100`)
-3. Repo config (`.commitly.yaml`, nearest walking up)
-4. User config (`~/.config/commitly/config.yaml`)
+1. A flag — `--type fix`
+2. The environment — `COMMITLY_SUBJECT__MAX_LENGTH=100`
+3. Repo config — `.commitly.yaml`, nearest one walking up
+4. User config — `~/.config/commitly/config.yaml`
 5. Built-in defaults
 
-`commitly config get <key>` prints a value **and which source won** — start there when a setting seems ignored.
+When a setting seems ignored, ask which source won:
 
 ```sh
-commitly config set subject.max_length 100 --local    # this repo
-commitly config set history.enabled false             # user-only key
-commitly config list --sources                        # full config with provenance
-commitly config path                                  # where everything lives
+commitly config get subject.max_length      # prints the value and where it came from
+commitly config set subject.max_length 100 --local
+commitly config list --sources              # everything, with provenance
+commitly config path                        # where the files live
 ```
 
-User-level settings (`history:`, `stats:`, `serve:`) are ignored in a repo config, so a clone can never change how your personal activity is recorded. Unknown keys warn rather than error — a repo pinned to a newer commitly stays usable on an older binary.
+Personal settings (`history:`, `stats:`, `serve:`) are ignored in a repo config,
+so cloning a repo can never change how your own activity is recorded. Unknown
+keys warn instead of failing, so an older binary still works with a repo pinned
+to a newer version.
 
-## Activity & statistics
+## Your data
 
-`commitly status` and `commitly serve` render the same data from two local stores:
+`status` and `serve` read from two files in the OS state directory:
 
-| Store | Holds | Written by | Retained |
+| File | Holds | Written by | Kept |
 |---|---|---|---|
-| `history.jsonl` | subjects, SHAs, repo paths | commits made **through** commitly | newest 100 |
-| `stats.jsonl` | daily counters only | commitly **and** the hook | ~2 years |
+| `history.jsonl` | Subjects, SHAs, repo paths | Commits made **through** commitly | Newest 100 |
+| `stats.jsonl` | Daily counters only | commitly **and** the hook | ~2 years |
 
-`status --stats` adds volume, type mix, rhythm and convention adherence for this week/month/all-time — each figure states the window it covers. `status --clear` and `status --stats --clear` wipe the stores separately.
+`status --stats` adds volume, type mix, rhythm and how often you stuck to the
+convention, for this week, month, or all time. Each number says which window it
+covers. `--clear` and `--clear-stats` wipe the two files separately.
 
-## Drafts
+Neither file is ever uploaded. `history.jsonl` is written `0600`.
 
-If you abort a commit (`Ctrl-C`) or a hook rejects your message, what you typed is saved to `.git/COMMITLY_DRAFT`. The next `git cm` offers to restore it — it's never automatic, and the file lives inside `.git/` so it can't be committed or shown in `git status`.
+### Drafts
 
-- `Y` — restore, `n` — skip, `d` — discard
-- `--no-draft` skips the check (for scripts)
-- Empty junk drafts are discarded automatically
-- Deleted on a successful commit
+Abort a commit with `Ctrl-C`, or have a hook reject your message, and what you
+typed is saved to `.git/COMMITLY_DRAFT`. The next `git cm` offers to restore it —
+never automatically. It lives inside `.git/`, so it can't be committed or show
+up in `git status`.
+
+- `Y` restores it, `n` skips it, `d` discards it
+- `--no-draft` skips the check entirely, for scripts
+- Empty junk drafts are discarded on their own
+- A successful commit deletes it
 
 ## Exit codes
 
-Used by CI and scripts — treat them as stable API.
+Stable API, for CI and scripts.
 
 | Code | Meaning |
 |---|---|
-| `0` | Success (commit created, lint passed, changelog rendered) |
-| `1` | The operation failed (not a repo, nothing staged, git rejected) |
-| `2` | Bad invocation (unknown flag, missing required value on a non-TTY) |
-| `3` | Validation failed — `lint` found an error-severity violation |
+| `0` | Success |
+| `1` | The operation failed — not a repo, nothing staged, git rejected it |
+| `2` | Bad invocation — unknown flag, missing value on a non-TTY |
+| `3` | Validation failed — `lint` found an error |
 | `130` | Aborted with `Ctrl-C` (draft saved, index untouched) |
 
-## Privacy
+## Updating
 
-Commitly records two local files in the OS state directory:
-
-- `history.jsonl` — the newest 100 commits made *through* commitly (subjects, SHAs, repo paths). Written `0600`.
-- `stats.jsonl` — ~2 years of daily counters. No message text, no SHAs, no paths.
-
-Neither is ever uploaded. The `commit-msg` hook (optional, installed by `commitly init --hook`) can count conforming vs non-conforming commits for `status --stats` — disclosed in full before the first count, counters only, and disable-able while keeping validation.
-
-## Updates
-
-Update through whatever installed you: `brew upgrade commitly`, or `go install ...@latest`. There is deliberately no `commitly self-update` — a self-updater would fight your package manager.
+Use whatever installed it: `brew upgrade commitly` or
+`go install ...@latest`. There's no `commitly self-update` on purpose — it would
+fight your package manager.
 
 ## License
 
