@@ -14,7 +14,7 @@ var completionCmd = &cobra.Command{
 	Short: "Generate a shell completion script",
 	Long: `Generate a shell completion script.
 
-If you installed via Homebrew, apt/dnf or Scoop, completions are already
+If you installed via Homebrew, completions are already
 installed — you don't need this. It's here for ` + "`go install`" + ` users and for
 the packages themselves.
 

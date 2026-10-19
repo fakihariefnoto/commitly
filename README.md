@@ -37,25 +37,11 @@ If you've ever had a commit rejected for "missing space after the colon," this t
 
 `git cm` works immediately after any of these — no `init`, no alias, no config required.
 
-**Homebrew** (macOS)
+**Homebrew** (macOS and Linux)
 
 ```sh
 brew tap fakihariefnoto/tap
 brew install fakihariefnoto/tap/commitly
-```
-
-**Scoop** (Windows)
-
-```sh
-scoop bucket add fakihariefnoto https://github.com/fakihariefnoto/scoop-bucket
-scoop install commitly
-```
-
-**`.deb` / `.rpm`** (Linux)
-
-```sh
-# attach the .deb/.rpm from the release, then:
-sudo dpkg -i commitly_*.deb     # or: sudo rpm -i commitly_*.rpm
 ```
 
 **`go install`**
@@ -64,6 +50,15 @@ sudo dpkg -i commitly_*.deb     # or: sudo rpm -i commitly_*.rpm
 go install github.com/fakihariefnoto/commitly/cmd/commitly@latest
 commitly init     # offers the `git cm` alias, since go install can't ship the symlink
 ```
+
+**Prebuilt binary**
+
+Download the archive for your platform from the
+[releases page](https://github.com/fakihariefnoto/commitly/releases), extract it,
+and put `commitly` on your `$PATH`. The archive also contains shell completions
+in `completions/` and a man page in `man/`. You get `git cm` here by running
+`commitly init` to install the alias, or by symlinking `git-cm` to `commitly`
+yourself.
 
 ## Quick start
 
@@ -236,7 +231,7 @@ Neither is ever uploaded. The `commit-msg` hook (optional, installed by `commitl
 
 ## Updates
 
-Update through whatever installed you: `brew upgrade commitly`, `scoop update commitly`, `apt`/`dnf`, or `go install ...@latest`. There is deliberately no `commitly self-update` — a self-updater would fight your package manager.
+Update through whatever installed you: `brew upgrade commitly`, or `go install ...@latest`. There is deliberately no `commitly self-update` — a self-updater would fight your package manager.
 
 ## License
 

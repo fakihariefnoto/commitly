@@ -34,6 +34,10 @@ go.work.sum
 bin/
 dist/
 
+# generated at release time by scripts/gen-artifacts.sh
+completions/
+man/
+
 # Editor/IDE
 # .idea/
 # .vscode/

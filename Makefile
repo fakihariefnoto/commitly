@@ -1,6 +1,6 @@
 # Commitly — build, test, lint, package
 
-.PHONY: build run install test test-coverage lint security completions man snapshot release-check tools clean help
+.PHONY: build run install test test-coverage lint security completions man snapshot check release token-store tools clean help
 
 APP_NAME := commitly
 VERSION  := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
@@ -31,22 +31,30 @@ lint: ## Run linter (includes gosec as one of the bundled linters)
 security: ## Run gosec standalone
 	gosec ./...
 
-completions: build ## Generate shell completions into completions/ (packaged by brew/deb/rpm)
+completions: ## Generate shell completions into completions/ (packaged by brew)
 	@mkdir -p completions
 	./bin/$(APP_NAME) completion bash > completions/$(APP_NAME).bash
 	./bin/$(APP_NAME) completion zsh  > completions/_$(APP_NAME)
 	./bin/$(APP_NAME) completion fish > completions/$(APP_NAME).fish
 	./bin/$(APP_NAME) completion powershell > completions/$(APP_NAME).ps1
 
-man: build ## Generate the man page into man/ (expected by .deb/.rpm users)
+man: ## Generate the man page into man/ (expected by .deb/.rpm users)
 	@mkdir -p man
 	./bin/$(APP_NAME) man > man/$(APP_NAME).1
 
-snapshot: ## Build all release artifacts locally without publishing (verify before tagging)
-	goreleaser release --snapshot --clean
+artifacts: build ## Generate everything the archives ship (completions + man page)
+	./scripts/gen-artifacts.sh
 
-release-check: ## Validate .goreleaser.yaml without building
-	goreleaser check
+snapshot: ## Build all release artifacts locally without publishing (verify before tagging)
+	goreleaser release --snapshot --clean --skip=publish
+
+check: lint vet test ## everything CI runs
+
+release: ## Tag and release, updating the Homebrew tap; V=1.2.3
+	./scripts/release.sh $(V)
+
+token-store: ## Save the Homebrew tap token in the macOS keychain
+	./scripts/release.sh --store-token
 
 tools: ## Install dev tools (golangci-lint, gosec, goreleaser)
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest

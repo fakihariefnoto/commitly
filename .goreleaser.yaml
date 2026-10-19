@@ -1,4 +1,22 @@
-# GoReleaser — one binary under two names across 5 channels.
+# GoReleaser — commitly.
+#
+# Drives the install channels in one pass:
+#   1. GitHub Releases    (archives + checksums.txt)
+#   2. Homebrew tap       (brews -> fakihariefnoto/homebrew-tap)
+#   3. go install         (no config: the module path is the channel)
+#
+# Run from a clean checkout with the tap token in the environment:
+#
+#   TAP_GITHUB_TOKEN=$(git credential fill <<< $'protocol=https\nhost=github.com\n' | sed -n 's/^password=//p') \
+#     goreleaser release --clean
+#
+# The binary is pure Go (CGO disabled), so every target cross-compiles from one
+# machine.
+#
+# The `git cm` symlink is NOT shipped inside the archive: goreleaser v2 removed
+# archive post_hooks. Homebrew creates it with install_symlink, and `go install`
+# users run `commitly init` to get the alias. One binary, one name on disk.
+
 version: 2
 
 project_name: commitly
@@ -6,6 +24,11 @@ project_name: commitly
 before:
   hooks:
     - go mod tidy
+    - go test ./...
+    # Completions and the man page are generated from the command tree and
+    # shipped in the archives, because the formula installs them and Homebrew
+    # cannot run the binary at build time to produce them.
+    - ./scripts/gen-artifacts.sh
 
 builds:
   - id: commitly
@@ -28,15 +51,19 @@ builds:
 
 archives:
   - id: default
-    formats: [tar.gz, zip]
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
     files:
       - LICENSE
       - README.md
-    # git-cm: symlink inside the archive for darwin/linux.
-    # NOTE: no wrap_in_directory — Homebrew's bin.install expects the
-    # binary at the archive root.
-    post_hooks:
-      - cmd: 'ln -sf commitly "{{ .ArtifactPath }}/git-cm"'
+      - src: completions/*
+        dst: completions
+      - src: man/*
+        dst: man
+    # No wrap_in_directory: the Homebrew formula does `bin.install "commitly"`
+    # and expects the binary at the archive root.
 
 checksum:
   name_template: checksums.txt
@@ -61,13 +88,22 @@ brews:
       bin.install_symlink bin/"commitly" => "git-cm"
       bash_completion.install "completions/commitly.bash"
       zsh_completion.install "completions/_commitly" => "_commitly"
+      fish_completion.install "completions/commitly.fish"
+      man1.install "man/commitly.1"
+    # `brew test` must exercise something real. --version is also what a
+    # package manager runs immediately after install, so this doubles as a
+    # smoke test that the binary starts.
+    test: |
+      assert_match "commitly", shell_output("#{bin}/commitly --version")
 
-scoops:
-  - name: commitly
-    repository:
-      owner: fakihariefnoto
-      name: scoop-bucket
-      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
-    bin:
-      - commitly
-      - commitly
+changelog:
+  use: github
+  groups:
+    - title: Features
+      regexp: '^.*?feat(\(.+\))??!?:.+$'
+      order: 0
+    - title: Fixes
+      regexp: '^.*?fix(\(.+\))??!?:.+$'
+      order: 1
+    - title: Other
+      order: 999
